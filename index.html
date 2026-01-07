@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Country Cinema Collector</title>
+    <style>
+        /* STYLE COUNTRY & DESIGN */
+        :root {
+            --wood: #3e2723;
+            --leather: #5d4037;
+            --gold: #d4af37;
+            --paper: #f5f5dc;
+        }
+
+        body {
+            background-color: var(--wood);
+            background-image: url('https://www.transparenttextures.com/patterns/wood-pattern.png');
+            color: var(--paper);
+            font-family: 'Courier New', Courier, monospace;
+            margin: 0;
+            padding-bottom: 100px;
+        }
+
+        header {
+            background: #1b1102;
+            border-bottom: 8px double var(--gold);
+            padding: 30px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5);
+        }
+
+        h1 { font-size: 2.5rem; color: var(--gold); text-transform: uppercase; letter-spacing: 3px; }
+
+        nav { margin-top: 20px; }
+        nav button {
+            background: var(--leather);
+            color: var(--gold);
+            border: 2px solid var(--gold);
+            padding: 10px 25px;
+            cursor: pointer;
+            font-weight: bold;
+            margin: 5px;
+            transition: 0.3s;
+        }
+        nav button:hover { background: var(--gold); color: black; }
+
+        /* RECHERCHE */
+        .search-bar { text-align: center; padding: 20px; }
+        input[type="text"] {
+            padding: 10px; width: 300px; border-radius: 5px; border: none;
+        }
+
+        /* GRILLE DE FILMS */
+        #main-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+            padding: 20px;
+        }
+
+        .card {
+            background: rgba(27, 17, 2, 0.9);
+            border: 3px solid var(--leather);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.3);
+        }
+
+        .card img { width: 100%; border: 2px solid var(--gold); margin-bottom: 10px; }
+
+        .inventory {
+            background: #2b1d0e;
+            padding: 10px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            border: 1px dashed var(--gold);
+        }
+
+        .trivia-box {
+            font-size: 0.75rem;
+            color: #bdc3c7;
+            margin-top: 10px;
+            border-top: 1px solid var(--leather);
+            padding-top: 5px;
+        }
+
+        /* LECTEUR MUSIQUE */
+        #audio-fixed {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            background: #1b1102;
+            padding: 15px;
+            border-top: 4px solid var(--gold);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>🤠 The Country Cinema Collector 🤠</h1>
+    <nav>
+        <button onclick="search('movie')">Films</button>
+        <button onclick="search('tv')">Séries</button>
+        <button onclick="alert('Bientôt disponible : Votre collection locale')">Ma Collection</button>
+    </nav>
+    <div class="search-bar">
+        <input type="text" id="query" placeholder="Chercher un film ou une série...">
+        <button onclick="performSearch()">Lancer le Lasso</button>
+    </div>
+</header>
+
+<main id="main-grid">
+    </main>
+
+<div id="audio-fixed">
+    <strong style="margin-right: 15px; color: var(--gold);">Radio Saloon :</strong>
+    <audio controls autoplay loop>
+        <source src="https://streamingv2.shoutcast.com/80s-Planet" type="audio/mpeg">
+    </audio>
+</div>
+
+<script>
+    const API_KEY = '69c19386e8e48631e0c5d683027ae963'; 
+    const BASE_URL = 'https://api.themoviedb.org/3';
+
+    async function performSearch() {
+        const query = document.getElementById('query').value;
+        if(!query) return;
+        
+        const response = await fetch(`${BASE_URL}/search/multi?api_key=${API_KEY}&query=${query}&language=fr-FR`);
+        const data = await response.json();
+        renderResults(data.results);
+    }
+
+    function renderResults(results) {
+        const grid = document.getElementById('main-grid');
+        grid.innerHTML = '';
+
+        results.forEach(item => {
+            const isMovie = item.media_type === 'movie';
+            const title = isMovie ? item.title : item.name;
+            const date = isMovie ? item.release_date : item.first_air_date;
+            const poster = item.poster_path ? `https://image.tmdb.org/t/p/w500${item.poster_path}` : 'https://via.placeholder.com/500x750?text=No+Image';
+
+            const card = document.createElement('div');
+            card.className = 'card';
+            card.innerHTML = `
+                <img src="${poster}" alt="${title}">
+                <h3>${title} (${date ? date.split('-')[0] : 'N/A'})</h3>
+                
+                <div class="inventory">
+                    <strong>Format possédé :</strong><br>
+                    <input type="checkbox"> DVD | <input type="checkbox"> Blu-Ray | <input type="checkbox"> 4K<br><br>
+                    <strong>Suivi :</strong><br>
+                    <input type="checkbox"> Déjà Vu
+                </div>
+
+                ${!isMovie ? `
+                    <div class="inventory" style="margin-top:5px;">
+                        <strong>Saisons & Épisodes :</strong><br>
+                        <small>Cocher si fini :</small><br>
+                        <input type="checkbox"> S1 <input type="checkbox"> S2 <input type="checkbox"> S3
+                    </div>
+                ` : ''}
+
+                <div class="trivia-box">
+                    <strong>Anecdote :</strong> ${item.overview.substring(0, 100)}...
+                </div>
+
+                <textarea placeholder="Commentaire du Sheriff..." style="width:100%; margin-top:10px; background:#f5f5dc;"></textarea>
+                <button style="width:100%; margin-top:5px; background:var(--gold);">Ajouter à la Wishlist</button>
+            `;
+            grid.appendChild(card);
+        });
+    }
+
+    // Charger quelques films au début pour décorer
+    async function init() {
+        const resp = await fetch(`${BASE_URL}/trending/all/week?api_key=${API_KEY}&language=fr-FR`);
+        const data = await resp.json();
+        renderResults(data.results);
+    }
+
+    if(API_KEY !== 'METTRE_TA_CLE_ICI') init();
+    else alert("Bienvenue ! Pour voir les films, n'oublie pas d'insérer ta clé API TMDB gratuite dans le code.");
+
+</script>
+
+</body>
+</html>
